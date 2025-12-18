@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Culinary AI Assistant</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>🍽️ Culinary AI Assistant</h1>
+    <p class="subtitle">Discover regional dishes, simple recipes, and cost estimates using AI</p>
+
+    <div class="input-box">
+        <input type="text" id="location" placeholder="Enter a country or region">
+        <button onclick="generate()">Generate</button>
+    </div>
+
+    <div id="loader" class="loader hidden"></div>
+
+
+    <div id="output" class="output hidden">
+
+        <div class="card">
+            <h2>🥘 Classic Dishes</h2>
+            <p id="meal"></p>
+        </div>
+
+        <div class="card">
+            <h2>👨‍🍳 Easiest Recipe</h2>
+            <p id="recipe"></p>
+        </div>
+
+        <div class="card highlight">
+            <h2>⏱️ Time & Cost Estimate</h2>
+            <p id="time"></p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function generate() {
+    const location = document.getElementById("location").value;
+    const loader = document.getElementById("loader");
+    const output = document.getElementById("output");
+    const button = document.querySelector("button");
+
+    // Show loader
+    loader.classList.remove("hidden");
+    output.classList.add("hidden");
+    button.disabled = true;
+
+    fetch("/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ location })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("meal").innerHTML = data.meal;
+        document.getElementById("recipe").innerHTML = data.recipe;
+        document.getElementById("time").innerHTML = data.time;
+
+        // Hide loader, show output
+        loader.classList.add("hidden");
+        output.classList.remove("hidden");
+        button.disabled = false;
+    })
+    .catch(() => {
+        loader.classList.add("hidden");
+        button.disabled = false;
+        alert("Something went wrong. Please try again.");
+    });
+}
+</script>
+
+
+</body>
+</html>
