@@ -2,112 +2,117 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Culinary AI Assistant</title>
+    <title>🏍️ Biker Trip Planner AI</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
 
 <div class="container">
-    <h1>🍽️ Culinary AI Assistant</h1>
+    <h1>🏍️ Biker Trip Planner AI</h1>
     <p class="subtitle">
-        Discover regional dishes, simple recipes, costs, and images using AI
+        Plan motorcycle routes, travel time, and must-visit spots using AI
     </p>
 
+    <!-- Input Section -->
     <div class="input-box">
         <input
             type="text"
-            id="location"
-            placeholder="Enter a country or region (e.g., Italy)"
+            id="start"
+            placeholder="Starting location (e.g., Bangalore)"
         >
-        <button onclick="generate()">Generate</button>
+        <input
+            type="text"
+            id="destination"
+            placeholder="Destination (e.g., Coorg)"
+        >
+        <button onclick="generate()">Plan Ride</button>
     </div>
 
+    <!-- Error Message -->
+    <div id="error-box" class="error-box"></div>
+
+    <!-- Loader -->
     <div id="loader" class="loader hidden"></div>
 
+    <!-- Output -->
     <div id="output" class="output hidden">
 
         <div class="card">
-            <h2>🥘 Classic Dishes</h2>
-            <div id="meal"></div>
-        </div>
-
-        <div class="card">
-            <h2>👨‍🍳 Easiest Recipe</h2>
-            <div id="recipe"></div>
+            <h2>🛣️ Route Plan & Waypoints</h2>
+            <div id="route"></div>
         </div>
 
         <div class="card highlight">
-            <h2>⏱️ Time & Cost Estimate</h2>
+            <h2>⏱️ Estimated Travel Time</h2>
             <div id="time"></div>
         </div>
 
         <div class="card">
-            <h2>📸 Dish Images</h2>
-            <div id="images" class="image-grid"></div>
+            <h2>📍 Places to Visit Near Destination</h2>
+            <div id="places"></div>
         </div>
 
     </div>
 </div>
 
 <script>
+function showError(message) {
+    const errorBox = document.getElementById("error-box");
+    errorBox.innerText = message;
+    errorBox.style.display = "block";
+}
+
+function clearError() {
+    const errorBox = document.getElementById("error-box");
+    errorBox.innerText = "";
+    errorBox.style.display = "none";
+}
+
 function generate() {
-    const locationInput = document.getElementById("location");
-    const location = locationInput.value.trim();
-
-    if (!location) {
-        alert("Please enter a location");
-        return;
-    }
-
+    const start = document.getElementById("start").value.trim();
+    const destination = document.getElementById("destination").value.trim();
     const loader = document.getElementById("loader");
     const output = document.getElementById("output");
-    const button = document.querySelector(".input-box button");
-    const imagesDiv = document.getElementById("images");
+    const button = document.querySelector("button");
+
+    clearError();
+
+    if (!start || !destination) {
+        showError("Please enter both starting location and destination.");
+        return;
+    }
 
     loader.classList.remove("hidden");
     output.classList.add("hidden");
     button.disabled = true;
-    imagesDiv.innerHTML = "";
 
     fetch("/generate", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ location })
+        body: JSON.stringify({ start, destination })
     })
-    .then(res => {
-        if (!res.ok) {
-            throw new Error("Server error");
-        }
-        return res.json();
-    })
+    .then(res => res.json())
     .then(data => {
-        document.getElementById("meal").innerHTML = data.meal;
-        document.getElementById("recipe").innerHTML = data.recipe;
-        document.getElementById("time").innerHTML = data.time;
-
-        if (data.images && data.images.length > 0) {
-            data.images.forEach(url => {
-                const img = document.createElement("img");
-                img.src = url;
-                img.className = "dish-image";
-                imagesDiv.appendChild(img);
-            });
-        } else {
-            imagesDiv.innerHTML = "<p>No images found.</p>";
+        if (data.error) {
+            showError(data.error);
+            return;
         }
 
-        loader.classList.add("hidden");
+        document.getElementById("route").innerHTML = data.route_plan;
+        document.getElementById("time").innerHTML = data.travel_time;
+        document.getElementById("places").innerHTML = data.places_to_visit;
+
         output.classList.remove("hidden");
-        button.disabled = false;
     })
-    .catch(err => {
-        console.error(err);
+    .catch(() => {
+        showError("Something went wrong. Please try again.");
+    })
+    .finally(() => {
         loader.classList.add("hidden");
         button.disabled = false;
-        alert("Something went wrong. Please try again.");
     });
 }
 </script>

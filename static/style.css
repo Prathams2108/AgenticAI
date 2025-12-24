@@ -1,10 +1,17 @@
+/* ---------- Base Reset ---------- */
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     padding: 0;
     font-family: "Segoe UI", sans-serif;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #e9ecef;
 }
 
+/* ---------- Layout ---------- */
 .container {
     max-width: 900px;
     margin: 50px auto;
@@ -14,74 +21,129 @@ body {
 h1 {
     text-align: center;
     margin-bottom: 5px;
+    font-size: 2.4rem;
+    color: #ffffff;
 }
 
 .subtitle {
     text-align: center;
-    color: #666;
-    margin-bottom: 30px;
+    color: #adb5bd;
+    margin-bottom: 35px;
 }
 
+/* ---------- Input Section ---------- */
 .input-box {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    margin-bottom: 30px;
+    gap: 12px;
+    margin-bottom: 20px;
 }
 
-input {
-    width: 60%;
-    padding: 12px;
+.input-box input {
+    width: 35%;
+    padding: 12px 14px;
     font-size: 16px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    border-radius: 10px;
+    border: 1px solid #495057;
+    background-color: #1c1f26;
+    color: #f8f9fa;
+    outline: none;
 }
 
-button {
-    padding: 12px 20px;
+.input-box input::placeholder {
+    color: #868e96;
+}
+
+.input-box input:focus {
+    border-color: #20c997;
+}
+
+.input-box button {
+    padding: 12px 22px;
     font-size: 16px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: none;
-    background: #343a40;
-    color: white;
+    background: linear-gradient(135deg, #20c997, #0ca678);
+    color: #0b1e1e;
     cursor: pointer;
+    font-weight: 600;
 }
 
-button:hover {
-    background: #212529;
+.input-box button:hover {
+    opacity: 0.9;
 }
 
-.output {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
+.input-box button:disabled {
+    background: #495057;
+    cursor: not-allowed;
 }
 
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 14px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+/* ---------- Error Message ---------- */
+.error-box {
+    display: none;
+    background-color: #3b0d0d;
+    color: #ff6b6b;
+    border: 1px solid #ff6b6b;
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    font-weight: 500;
 }
 
-.card h2 {
-    margin-top: 0;
-    margin-bottom: 10px;
-}
-
-.card p {
-    line-height: 1.6;
-    color: #333;
-}
-
-.highlight {
-    border-left: 6px solid #198754;
+/* ---------- Loader ---------- */
+.loader {
+    margin: 35px auto;
+    width: 60px;
+    height: 60px;
+    border: 6px solid #343a40;
+    border-top: 6px solid #20c997;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 .hidden {
     display: none;
 }
 
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ---------- Output ---------- */
+.output {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+}
+
+/* ---------- Cards ---------- */
+.card {
+    background-color: #1c1f26;
+    padding: 22px;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1.3rem;
+    color: #f1f3f5;
+}
+
+.card p,
+.card li {
+    line-height: 1.6;
+    color: #dee2e6;
+}
+
+/* ---------- Highlight Card ---------- */
+.highlight {
+    border-left: 6px solid #20c997;
+}
+
+/* ---------- Lists ---------- */
 .card ul {
     padding-left: 20px;
 }
@@ -90,45 +152,19 @@ button:hover {
     margin-bottom: 8px;
 }
 
-.card strong {
-    color: #212529;
-}
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+    .input-box {
+        flex-direction: column;
+    }
 
-.card h3 {
-    margin-top: 15px;
-    color: #198754;
-}
-.loader {
-    margin: 30px auto;
-    width: 60px;
-    height: 60px;
-    border: 6px solid #e9ecef;
-    border-top: 6px solid #343a40;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
+    .input-box input,
+    .input-box button {
+        width: 100%;
+    }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-button:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-}
-
-.image-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    margin-top: 10px;
-}
-
-.image-grid img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    .container {
+        margin: 30px auto;
+        padding: 20px;
+    }
 }
