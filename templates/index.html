@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>🏍️ Biker Trip Planner AI</title>
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
@@ -10,63 +17,95 @@
 
 <div class="container">
     <h1>🏍️ Biker Trip Planner AI</h1>
-    <p class="subtitle">
-        Plan motorcycle routes, travel time, and must-visit spots using AI
-    </p>
+    <p class="subtitle">Plan motorcycle routes using AI + OpenStreetMap</p>
 
-    <!-- Input Section -->
     <div class="input-box">
-        <input
-            type="text"
-            id="start"
-            placeholder="Starting location (e.g., Bangalore)"
-        >
-        <input
-            type="text"
-            id="destination"
-            placeholder="Destination (e.g., Coorg)"
-        >
+        <input id="start" placeholder="Starting location (e.g., Bangalore)">
+        <input id="destination" placeholder="Destination (e.g., Wayanad)">
         <button onclick="generate()">Plan Ride</button>
     </div>
 
-    <!-- Error Message -->
     <div id="error-box" class="error-box"></div>
-
-    <!-- Loader -->
     <div id="loader" class="loader hidden"></div>
 
-    <!-- Output -->
-    <div id="output" class="output hidden">
+    <!-- MAP -->
+    <div id="map" style="height:420px;border-radius:16px;margin-bottom:30px;"></div>
 
+    <div id="output" class="output hidden">
         <div class="card">
-            <h2>🛣️ Route Plan & Waypoints</h2>
+            <h2>🛣️ Route Plan</h2>
             <div id="route"></div>
         </div>
 
         <div class="card highlight">
-            <h2>⏱️ Estimated Travel Time</h2>
-            <div id="time"></div>
-        </div>
-
-        <div class="card">
-            <h2>📍 Places to Visit Near Destination</h2>
+            <h2>📍 Places to Visit</h2>
             <div id="places"></div>
         </div>
-
     </div>
 </div>
 
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-function showError(message) {
-    const errorBox = document.getElementById("error-box");
-    errorBox.innerText = message;
-    errorBox.style.display = "block";
+/* =====================================================
+   MAP INIT
+===================================================== */
+const map = L.map("map").setView([12.9716, 77.5946], 6);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors"
+}).addTo(map);
+
+let routeLayer;
+let startMarker, endMarker;
+
+/* =====================================================
+   HELPERS
+===================================================== */
+async function geocode(place) {
+    const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}`
+    );
+    const data = await res.json();
+    return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+}
+
+async function drawRoute(start, destination) {
+    const startC = await geocode(start);
+    const endC = await geocode(destination);
+
+    const url =
+        `https://router.project-osrm.org/route/v1/driving/${startC[1]},${startC[0]};${endC[1]},${endC[0]}?overview=full&geometries=geojson`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (routeLayer) map.removeLayer(routeLayer);
+    if (startMarker) map.removeLayer(startMarker);
+    if (endMarker) map.removeLayer(endMarker);
+
+    routeLayer = L.geoJSON(data.routes[0].geometry, {
+        style: { weight: 5 }
+    }).addTo(map);
+
+    startMarker = L.marker(startC).addTo(map).bindPopup("Start");
+    endMarker = L.marker(endC).addTo(map).bindPopup("Destination");
+
+    map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+}
+
+/* =====================================================
+   UI
+===================================================== */
+function showError(msg) {
+    const box = document.getElementById("error-box");
+    box.innerText = msg;
+    box.style.display = "block";
 }
 
 function clearError() {
-    const errorBox = document.getElementById("error-box");
-    errorBox.innerText = "";
-    errorBox.style.display = "none";
+    document.getElementById("error-box").style.display = "none";
 }
 
 function generate() {
@@ -74,46 +113,31 @@ function generate() {
     const destination = document.getElementById("destination").value.trim();
     const loader = document.getElementById("loader");
     const output = document.getElementById("output");
-    const button = document.querySelector("button");
 
     clearError();
 
     if (!start || !destination) {
-        showError("Please enter both starting location and destination.");
+        showError("Please enter both locations");
         return;
     }
 
     loader.classList.remove("hidden");
     output.classList.add("hidden");
-    button.disabled = true;
 
     fetch("/generate", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ start, destination })
     })
     .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            showError(data.error);
-            return;
-        }
-
+    .then(async data => {
         document.getElementById("route").innerHTML = data.route_plan;
-        document.getElementById("time").innerHTML = data.travel_time;
         document.getElementById("places").innerHTML = data.places_to_visit;
-
+        await drawRoute(start, destination);
         output.classList.remove("hidden");
     })
-    .catch(() => {
-        showError("Something went wrong. Please try again.");
-    })
-    .finally(() => {
-        loader.classList.add("hidden");
-        button.disabled = false;
-    });
+    .catch(() => showError("Server error"))
+    .finally(() => loader.classList.add("hidden"));
 }
 </script>
 

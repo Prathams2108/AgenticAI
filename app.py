@@ -8,10 +8,12 @@ from langchain_core.prompts import PromptTemplate, FewShotPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableMap
 
-
 load_dotenv()
 
 app = Flask(__name__)
+
+# 🔹 ADD THIS
+MAPBOX_TOKEN = os.getenv("MAPBOX_ACCESS_TOKEN")
 
 # -------------------- LLM --------------------
 llm = ChatOpenAI(
@@ -61,7 +63,7 @@ route_prompt = FewShotPromptTemplate(
 route_chain = route_prompt | llm | parser
 
 # ==========================================================
-# CHAIN 2: RIDING TIPS (USES ROUTE OUTPUT)
+# CHAIN 2: RIDING TIPS
 # ==========================================================
 tips_prompt = PromptTemplate(
     input_variables=["route_plan"],
@@ -80,7 +82,7 @@ Riding Tips:
 tips_chain = tips_prompt | llm | parser
 
 # ==========================================================
-# CHAIN 3: PLACES TO VISIT (USES ROUTE + DESTINATION)
+# CHAIN 3: PLACES TO VISIT
 # ==========================================================
 places_prompt = PromptTemplate(
     input_variables=["destination", "route_plan"],
@@ -102,44 +104,27 @@ Places:
 
 places_chain = places_prompt | llm | parser
 
-# ==========================================================
-# SEQUENTIAL PIPELINE
-# ==========================================================
-biker_trip_chain = (
-    RunnableMap({
-        "route_plan": route_chain,
-        "destination": RunnablePassthrough()
-    })
-    | RunnableMap({
-        "route_plan": RunnablePassthrough(),
-        "riding_tips": tips_chain,
-        "places_to_visit": places_chain
-    })
-)
-
-
 # -------------------- ROUTES --------------------
 @app.route("/")
 def home():
-    return render_template("index.html")
+    # 🔹 PASS TOKEN TO TEMPLATE
+    return render_template("index.html", mapbox_token=MAPBOX_TOKEN)
+
 
 @app.route("/generate", methods=["POST"])
 def generate():
     start = request.json.get("start")
     destination = request.json.get("destination")
 
-    # 1️⃣ Route planning
     route_plan = route_chain.invoke({
         "start": start,
         "destination": destination
     })
 
-    # 2️⃣ Riding tips (uses route output)
     riding_tips = tips_chain.invoke({
         "route_plan": route_plan
     })
 
-    # 3️⃣ Places to visit (uses route + destination)
     places_to_visit = places_chain.invoke({
         "destination": destination,
         "route_plan": route_plan
